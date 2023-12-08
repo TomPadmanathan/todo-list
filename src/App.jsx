@@ -15,17 +15,29 @@ export default function App() {
 	useEffect(() => {
 		async function fetchTodos() {
 			try {
-				const response = await fetch('/myRoute', {
+				const response = await fetch('http://localhost:3001/todos', {
 					method: 'GET',
 					headers: { 'Content-Type': 'application/json' },
 				});
-				const responseJson = await response.json();
 				if (!response.ok) {
-					setError(responseJson.error);
-					return;
+					switch (response.status) {
+						case 500:
+							setError('Internal server error');
+							break;
+						case 405:
+							setError('Method not allowed');
+							break;
+						case 404:
+							setError('Resource not found');
+							break;
+						default:
+							setError('Something went wrong adding new todo');
+							break;
+					}
 				}
-				setTodos(responseJson.todos);
-			} catch {
+				const responseJson = await response.json();
+				setTodos(responseJson);
+			} catch (error) {
 				setError('Something went wrong fetching todos');
 			}
 		}
@@ -35,7 +47,7 @@ export default function App() {
 	async function handleSubmit(e) {
 		e.preventDefault();
 		try {
-			const response = await fetch('/myRoute', {
+			const response = await fetch('http://localhost:3001/todos', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -43,11 +55,26 @@ export default function App() {
 				}),
 			});
 			const responseJson = await response.json();
+
 			if (!response.ok) {
-				setError(responseJson.error);
-				return;
+				switch (response.status) {
+					case 200:
+						setTodos(responseJson);
+						break;
+					case 500:
+						setError('Internal server error');
+						break;
+					case 405:
+						setError('Method not allowed');
+						break;
+					case 404:
+						setError('Resource not found');
+						break;
+					default:
+						setError('Something went wrong adding new todo');
+						break;
+				}
 			}
-			setTodos(responseJson.todos);
 		} catch {
 			setError('Something went wrong adding new todo');
 		}
@@ -77,7 +104,7 @@ export default function App() {
 							key={index}
 							className="my-2 flex w-96 items-center justify-between rounded-sm bg-slate-200 p-5"
 						>
-							<p>My todo</p>
+							<p>{element.todo}</p>
 							<button className=" text-xl text-red-600" onClick={() => {}}>
 								<HiOutlineTrash />
 							</button>
