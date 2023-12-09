@@ -12,6 +12,8 @@ export default function App() {
 	const [error, setError] = useState('');
 	const [newTodo, setNewTodo] = useState('');
 
+	useEffect(() => console.log(todos), [todos]);
+
 	useEffect(() => {
 		async function fetchTodos() {
 			try {
@@ -47,7 +49,7 @@ export default function App() {
 	async function handleSubmit(e) {
 		e.preventDefault();
 		try {
-			const response = await fetch('http://localhost:3001/todos', {
+			const response = await fetch('http://localhost:3001/addTodo', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -58,23 +60,21 @@ export default function App() {
 
 			if (!response.ok) {
 				switch (response.status) {
-					case 200:
-						setTodos(responseJson);
-						break;
 					case 500:
 						setError('Internal server error');
-						break;
+						return;
 					case 405:
 						setError('Method not allowed');
-						break;
+						return;
 					case 404:
 						setError('Resource not found');
-						break;
+						return;
 					default:
 						setError('Something went wrong adding new todo');
-						break;
+						return;
 				}
 			}
+			setTodos(responseJson);
 		} catch {
 			setError('Something went wrong adding new todo');
 		}
