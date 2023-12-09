@@ -12,7 +12,21 @@ export default function App() {
 	const [error, setError] = useState('');
 	const [newTodo, setNewTodo] = useState('');
 
-	useEffect(() => console.log(todos), [todos]);
+	function getDateTimeFromTimeStamp(timestamp) {
+		const date = new Date(timestamp);
+
+		const dateStr = `${date.getHours().toString().padStart(2, '0')}:${date
+			.getMinutes()
+			.toString()
+			.padStart(2, '0')}`;
+		const timeStr = `${date.getDate().toString().padStart(2, '0')}/${(
+			date.getMonth() + 1
+		)
+			.toString()
+			.padStart(2, '0')}/${date.getFullYear()}`;
+
+		return dateStr + ' • ' + timeStr;
+	}
 
 	useEffect(() => {
 		async function fetchTodos() {
@@ -48,13 +62,12 @@ export default function App() {
 
 	async function handleSubmit(e) {
 		e.preventDefault();
+
 		try {
 			const response = await fetch('http://localhost:3001/addTodo', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					newTodo,
-				}),
+				body: newTodo,
 			});
 			const responseJson = await response.json();
 
@@ -74,6 +87,7 @@ export default function App() {
 						return;
 				}
 			}
+			setNewTodo('');
 			setTodos(responseJson);
 		} catch {
 			setError('Something went wrong adding new todo');
@@ -83,7 +97,7 @@ export default function App() {
 	return (
 		<div className="App grid h-screen place-items-center">
 			<div className="text-center">
-				{error && <p>{error}</p>}
+				{error && <p className="text-red-600">{error}</p>}
 				<h2 className="text-4xl ">Todo List</h2>
 				<form
 					onSubmit={handleSubmit}
@@ -94,6 +108,7 @@ export default function App() {
 						placeholder="New Todo"
 						className="flex items-center justify-between rounded-sm bg-slate-200 focus:outline-none"
 						onChange={(e) => setNewTodo(e.target.value)}
+						value={newTodo}
 						required
 					/>
 					<button type="submit">Add todo</button>
@@ -105,6 +120,9 @@ export default function App() {
 							className="my-2 flex w-96 items-center justify-between rounded-sm bg-slate-200 p-5"
 						>
 							<p>{element.todo}</p>
+							<p className="text-gray-400">
+								{getDateTimeFromTimeStamp(element.timestamp)}
+							</p>
 							<button className=" text-xl text-red-600" onClick={() => {}}>
 								<HiOutlineTrash />
 							</button>

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"time"
 
@@ -14,10 +15,7 @@ type todo struct {
 	Todo string `json:"todo"`
 	Timestamp int64 `json:"timestamp"`
 }
-var todos []todo = []todo{
-	{Id: uuid.New().String(), Todo: "Wash dishes", Timestamp: 1702020402},
-	{Id: uuid.New().String(), Todo: "Get Landary", Timestamp: 1701020402},
-}
+var todos []todo = []todo{}
 
 func todosEndpoint(w http.ResponseWriter, req *http.Request) {
 	if(req.Method != "GET") {
@@ -40,10 +38,16 @@ func addTodoEndpoint(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	body, err := io.ReadAll(req.Body)
+	if err != nil {
+		panic(err)
+	}
 	var newTodo todo
 
+	newTodo.Todo = string(body)
 	newTodo.Id = uuid.New().String()
 	newTodo.Timestamp = time.Now().Unix()
+
 
 	todos = append(todos, newTodo)
 	
@@ -52,7 +56,7 @@ func addTodoEndpoint(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "Error encoding JSON", http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
+
 	w.Write(jsonData)
 }
 
