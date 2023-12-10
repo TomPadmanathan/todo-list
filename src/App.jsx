@@ -95,7 +95,7 @@ export default function App() {
 					{error && <p className="text-red-600">{error}</p>}
 					<form
 						onSubmit={addTodoHandler}
-						className="my-2 flex w-96 items-center justify-between rounded-sm bg-slate-200 p-5 focus:outline-none"
+						className="my-2 flex w-[500px] items-center justify-between rounded-sm bg-slate-200 p-5 focus:outline-none"
 					>
 						<input
 							type="text"
@@ -192,14 +192,28 @@ function TodoListItem({ element, setError, todosState, isTodoEditingState }) {
 		console.log('Edit this id: ' + todoId + ' with this new value ' + newValue);
 	}
 
+	useEffect(() => {
+		if (todoInput.current) {
+			const element = todoInput.current;
+			element.style.height = '25px';
+			element.style.height = `${element.scrollHeight}px`;
+		}
+	}, [todoInput]);
+
 	return (
-		<li className="my-2 flex w-96 items-center justify-around break-words rounded-sm bg-slate-200 p-5 text-left">
-			<input
-				className="w-1/3 bg-gray-200 focus:outline-none"
+		<li className="my-2 flex w-[500px] items-center justify-around break-words rounded-sm bg-slate-200 p-5 text-left">
+			<textarea
+				className="h-[25px] w-1/2 resize-none overflow-y-hidden bg-slate-200 leading-6 focus:outline-none"
 				value={todoValue}
 				ref={todoInput}
 				disabled={!editable}
-				onChange={(e) => setTodoValue(e.target.value)}
+				onChange={(e) => {
+					setTodoValue(e.target.value);
+
+					// Dynamicly change height of element
+					e.target.style.height = '25px';
+					e.target.style.height = `${e.target.scrollHeight}px`;
+				}}
 			/>
 
 			<p className="text-gray-400">
@@ -224,7 +238,6 @@ function TodoListItem({ element, setError, todosState, isTodoEditingState }) {
 			>
 				{!editable ? <HiOutlinePencil /> : <HiCheck />}
 			</button>
-
 			<button
 				className="text-xl text-red-600"
 				onClick={() => {
