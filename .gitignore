@@ -8,7 +8,7 @@
 
 # production
 /build
-todo-backend.exe
+server/todo-backend.exe
 
 # misc
 .DS_Store
