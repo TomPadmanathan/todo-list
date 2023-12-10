@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -48,20 +47,35 @@ func writeToFile(filename string, data []byte) error {
 }
 
 func readFromFile(filename string) error {
-	// open file
-	file, err := os.Open(filename)
+	// Open file or create it if it doesn't exist
+	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	// read from file
+	// Read from file
 	data, err := io.ReadAll(file)
 	if err != nil {
 		return err
 	}
 
-	// unmarshal file
+	// If file is empty, store an empty array
+	if len(data) == 0 {
+		emptyArray := []byte("[]")
+		_, err = file.Write(emptyArray)
+		if err != nil {
+			return err
+		}
+		_, err = file.Seek(0, 0) // Move the file cursor back to the beginning
+		if err != nil {
+			return err
+		}
+		todos = []todo{}
+		return nil
+	}
+
+	// Unmarshal file
 	err = json.Unmarshal(data, &todos)
 	if err != nil {
 		return err
@@ -70,6 +84,7 @@ func readFromFile(filename string) error {
 	return nil
 }
 
+
 func todosEndpoint(w http.ResponseWriter, req *http.Request) {
 	if(req.Method != "GET") {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -77,9 +92,9 @@ func todosEndpoint(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// read/update todos from json
-	err := readFromFile("todos.json")
+	var err error = readFromFile("todos.json")
 	if err != nil {
-		fmt.Println("Error reading from file:", err)
+		http.Error(w, "error reading todos from json", http.StatusInternalServerError)
 		return
 	}
 
