@@ -105,7 +105,10 @@ export default function App() {
 							value={newTodo}
 							required
 						/>
-						<button type="submit" className="text-xl text-gray-400">
+						<button
+							type="submit"
+							className={`text-xl text-gray-400 transition-all hover:text-green-400`}
+						>
 							<HiPlus />
 						</button>
 					</form>
@@ -203,8 +206,8 @@ function TodoListItem({ element, setError, todosState, isTodoEditingState }) {
 			</p>
 			<button
 				className={`text-xl transition-all ${
-					editable ? 'text-green-400' : 'text-gray-400'
-				}`}
+					!isTodoEditing && 'hover:text-green-400'
+				} ${editable ? 'text-green-400' : 'text-gray-400'}`}
 				onClick={() => {
 					if (editable) {
 						editTodoHandler(element.id, todoValue);
