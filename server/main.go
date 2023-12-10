@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -28,11 +30,59 @@ func responseTodos(w http.ResponseWriter) {
 	w.Write(jsonData)
 }
 
+func writeToFile(filename string, data []byte) error {
+	// open/create json file
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// write to file
+	_, err = file.Write(data)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func readFromFile(filename string) error {
+	// open file
+	file, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// read from file
+	data, err := io.ReadAll(file)
+	if err != nil {
+		return err
+	}
+
+	// unmarshal file
+	err = json.Unmarshal(data, &todos)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func todosEndpoint(w http.ResponseWriter, req *http.Request) {
 	if(req.Method != "GET") {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+
+	// read/update todos from json
+	err := readFromFile("todos.json")
+	if err != nil {
+		fmt.Println("Error reading from file:", err)
+		return
+	}
+
 	responseTodos(w)
 }
 
@@ -42,20 +92,42 @@ func addTodoEndpoint(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// get newtodo data
 	var body, err = io.ReadAll(req.Body)
 	if err != nil {
 		http.Error(w, "todo not found", http.StatusBadRequest)
 		return
 	}
+	// construct new todo
 	var newTodo todo
 
 	newTodo.Todo = string(body)
 	newTodo.Id = uuid.New().String()
 	newTodo.Timestamp = time.Now().Unix()
 
+	// add new todo 
 	todos = append(todos, newTodo)
+
+	updateTodosInJSONFile(w)
 	
 	responseTodos(w)
+}
+
+func updateTodosInJSONFile(w http.ResponseWriter)  {
+	// convert todos to json format
+	jsonData, err := json.MarshalIndent(todos, "", "    ")
+	if err != nil {
+		http.Error(w, "error writing todos to json", http.StatusInternalServerError)
+		return
+	}
+
+	// write the JSON data to file
+	err = writeToFile("todos.json", jsonData)
+	if err != nil {
+		http.Error(w, "error writing todos to json", http.StatusInternalServerError)
+		return
+	}
+
 }
 
 func deleteTodoEndpoint(w http.ResponseWriter, req *http.Request) {
@@ -64,11 +136,14 @@ func deleteTodoEndpoint(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// get todoId
 	var todoId, err = io.ReadAll(req.Body)
 	if err != nil {
 		http.Error(w, "todoId not found", http.StatusBadRequest)
 		return
 	}
+
+	// get the index to delete
 	var deleteItemindex int
 	for i := 0; i < len(todos); i++ {
 		if(todos[i].Id == string(todoId)) {
@@ -80,7 +155,11 @@ func deleteTodoEndpoint(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "invalid delete index", http.StatusBadRequest)
 		return
     }
+
+	// delete todo
 	todos = append(todos[:deleteItemindex], todos[deleteItemindex+1:]...)
+
+	updateTodosInJSONFile(w)
 
 	responseTodos(w)
 }
@@ -105,7 +184,6 @@ func editTodoEndpoint(w http.ResponseWriter, req *http.Request) {
 	}
 
 	var todoUpdate TodoUpdate
-
 	err = json.Unmarshal([]byte(jsonData), &todoUpdate)
 	if err != nil {
 		http.Error(w, "error getting data from request body", http.StatusInternalServerError)
@@ -125,6 +203,8 @@ func editTodoEndpoint(w http.ResponseWriter, req *http.Request) {
 		return
     }
 	todos[updateItemindex].Todo = todoUpdate.NewValue
+
+	updateTodosInJSONFile(w)
 
 	responseTodos(w)
 }
