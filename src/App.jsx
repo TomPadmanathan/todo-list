@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import './App.css';
 
 // Assets
-import { HiOutlineTrash } from 'react-icons/hi';
+import { HiOutlineTrash, HiPlus } from 'react-icons/hi';
 
 export default function App() {
 	const [todos, setTodos] = useState([]);
@@ -126,46 +126,53 @@ export default function App() {
 	}
 
 	return (
-		<div className="App grid h-screen place-items-center">
-			<div className="text-center">
-				{error && <p className="text-red-600">{error}</p>}
-				<h2 className="text-4xl ">Todo List</h2>
-				<form
-					onSubmit={addTodoHandler}
-					className="my-2 flex w-96 items-center justify-between rounded-sm bg-slate-200 p-5 focus:outline-none"
-				>
-					<input
-						type="text"
-						placeholder="New Todo"
-						className="flex items-center justify-between rounded-sm bg-slate-200 focus:outline-none"
-						onChange={(e) => setNewTodo(e.target.value)}
-						value={newTodo}
-						required
-					/>
-					<button type="submit">Add todo</button>
-				</form>
-				<ul>
-					{todos.map((element, index) => (
-						<li
-							key={index}
-							className="my-2 flex w-96 items-center justify-between rounded-sm bg-slate-200 p-5"
-						>
-							<p>{element.todo}</p>
-							<p className="text-gray-400">
-								{getDateTimeFromTimeStamp(element.timestamp)}
-							</p>
-							<button
-								className="text-xl text-red-600"
-								onClick={() => {
-									deleteTodoHandler(element.id);
-								}}
-							>
-								<HiOutlineTrash />
-							</button>
-						</li>
-					))}
-				</ul>
+		<>
+			<div className="flex h-60 items-center justify-center">
+				<h2 className="text-4xl">Todo List</h2>
 			</div>
-		</div>
+
+			<div className="grid place-items-center">
+				<div>
+					{error && <p className="text-red-600">{error}</p>}
+					<form
+						onSubmit={addTodoHandler}
+						className="my-2 flex w-96 items-center justify-between rounded-sm bg-slate-200 p-5 focus:outline-none"
+					>
+						<input
+							type="text"
+							placeholder="New Todo"
+							className="flex items-center justify-between rounded-sm bg-slate-200 focus:outline-none"
+							onChange={(e) => setNewTodo(e.target.value)}
+							value={newTodo}
+							required
+						/>
+						<button type="submit" className="text-xl text-gray-400">
+							<HiPlus />
+						</button>
+					</form>
+					<ul>
+						{todos.map((element, index) => (
+							<li
+								key={index}
+								className="my-2 flex w-96 items-center justify-between break-words rounded-sm bg-slate-200 p-5 text-left"
+							>
+								<p className="w-1/2">{element.todo}</p>
+								<p className=" text-gray-400">
+									{getDateTimeFromTimeStamp(element.timestamp)}
+								</p>
+								<button
+									className="text-xl text-red-600"
+									onClick={() => {
+										deleteTodoHandler(element.id);
+									}}
+								>
+									<HiOutlineTrash />
+								</button>
+							</li>
+						))}
+					</ul>
+				</div>
+			</div>
+		</>
 	);
 }
