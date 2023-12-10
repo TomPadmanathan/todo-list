@@ -38,7 +38,7 @@ func addTodoEndpoint(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	body, err := io.ReadAll(req.Body)
+	var body, err = io.ReadAll(req.Body)
 	if err != nil {
 		panic(err)
 	}
@@ -48,8 +48,38 @@ func addTodoEndpoint(w http.ResponseWriter, req *http.Request) {
 	newTodo.Id = uuid.New().String()
 	newTodo.Timestamp = time.Now().Unix()
 
-
 	todos = append(todos, newTodo)
+	
+	jsonData, err := json.Marshal(todos)
+	if err != nil {
+		http.Error(w, "Error encoding JSON", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(jsonData)
+}
+
+func deleteTodoEndpoint(w http.ResponseWriter, req *http.Request) {
+	if(req.Method != "POST") {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var reviewId, err = io.ReadAll(req.Body)
+	if err != nil {
+		panic(err)
+	}
+	var deleteItemindex int
+	for i := 0; i < len(todos); i++ {
+		if(todos[i].Id == string(reviewId)) {
+			deleteItemindex = i
+			break
+		}
+	}
+	if deleteItemindex < 0 || deleteItemindex >= len(todos) {
+		http.Error(w, "invalid delete index", http.StatusBadRequest)
+    }
+	todos = append(todos[:deleteItemindex], todos[deleteItemindex+1:]...)
 	
 	jsonData, err := json.Marshal(todos)
 	if err != nil {
@@ -63,13 +93,17 @@ func addTodoEndpoint(w http.ResponseWriter, req *http.Request) {
 func main() {
 	const port string = "3001"
 
-	corsHandler := cors.Default()
+	var corsHandler *cors.Cors = cors.Default()
 	http.HandleFunc("/todos", func(w http.ResponseWriter, req *http.Request) {
 		var handler http.Handler = corsHandler.Handler(http.HandlerFunc(todosEndpoint))
 		handler.ServeHTTP(w, req)
 	})
 	http.HandleFunc("/addTodo", func(w http.ResponseWriter, req *http.Request) {
 		var handler http.Handler = corsHandler.Handler(http.HandlerFunc(addTodoEndpoint))
+		handler.ServeHTTP(w, req)
+	})
+	http.HandleFunc("/deleteTodo", func(w http.ResponseWriter, req *http.Request) {
+		var handler http.Handler = corsHandler.Handler(http.HandlerFunc(deleteTodoEndpoint))
 		handler.ServeHTTP(w, req)
 	})
 	http.ListenAndServe("localhost:"+port, nil)
