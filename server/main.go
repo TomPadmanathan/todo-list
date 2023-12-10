@@ -44,7 +44,7 @@ func addTodoEndpoint(w http.ResponseWriter, req *http.Request) {
 
 	var body, err = io.ReadAll(req.Body)
 	if err != nil {
-		http.Error(w, "reviewId not found", http.StatusBadRequest)
+		http.Error(w, "todo not found", http.StatusBadRequest)
 		return
 	}
 	var newTodo todo
@@ -64,22 +64,67 @@ func deleteTodoEndpoint(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	var reviewId, err = io.ReadAll(req.Body)
+	var todoId, err = io.ReadAll(req.Body)
 	if err != nil {
-		http.Error(w, "reviewId not found", http.StatusBadRequest)
+		http.Error(w, "todoId not found", http.StatusBadRequest)
 		return
 	}
 	var deleteItemindex int
 	for i := 0; i < len(todos); i++ {
-		if(todos[i].Id == string(reviewId)) {
+		if(todos[i].Id == string(todoId)) {
 			deleteItemindex = i
 			break
 		}
 	}
 	if deleteItemindex < 0 || deleteItemindex >= len(todos) {
 		http.Error(w, "invalid delete index", http.StatusBadRequest)
+		return
     }
 	todos = append(todos[:deleteItemindex], todos[deleteItemindex+1:]...)
+
+	responseTodos(w)
+}
+
+func editTodoEndpoint(w http.ResponseWriter, req *http.Request) {
+	if(req.Method != "POST") {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get data from req
+	var jsonData, err = io.ReadAll(req.Body)
+	if err != nil {
+		http.Error(w, "todoId not found", http.StatusBadRequest)
+		return
+	}
+
+	// Convert from body to json
+	type TodoUpdate struct {
+		TodoID  string `json:"todoId"`
+		NewValue string `json:"newValue"`
+	}
+
+	var todoUpdate TodoUpdate
+
+	err = json.Unmarshal([]byte(jsonData), &todoUpdate)
+	if err != nil {
+		http.Error(w, "error getting data from request body", http.StatusInternalServerError)
+		return
+	}
+
+	// update in todos
+	var updateItemindex int
+	for i := 0; i < len(todos); i++ {
+		if(todos[i].Id == string(todoUpdate.TodoID)) {
+			updateItemindex  = i
+			break
+		}
+	}
+	if updateItemindex < 0 || updateItemindex  >= len(todos) {
+		http.Error(w, "invalid update index", http.StatusBadRequest)
+		return
+    }
+	todos[updateItemindex].Todo = todoUpdate.NewValue
 
 	responseTodos(w)
 }
@@ -98,6 +143,11 @@ func main() {
 	})
 	http.HandleFunc("/deleteTodo", func(w http.ResponseWriter, req *http.Request) {
 		var handler http.Handler = corsHandler.Handler(http.HandlerFunc(deleteTodoEndpoint))
+		handler.ServeHTTP(w, req)
+	})
+
+	http.HandleFunc("/editTodo", func(w http.ResponseWriter, req *http.Request) {
+		var handler http.Handler = corsHandler.Handler(http.HandlerFunc(editTodoEndpoint))
 		handler.ServeHTTP(w, req)
 	})
 	http.ListenAndServe("localhost:"+port, nil)
