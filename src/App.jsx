@@ -1,16 +1,22 @@
 // React
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 // CSS
 import './App.css';
 
 // Assets
-import { HiOutlineTrash, HiPlus } from 'react-icons/hi';
+import {
+	HiOutlinePencil,
+	HiOutlineTrash,
+	HiPlus,
+	HiCheck,
+} from 'react-icons/hi';
 
 export default function App() {
 	const [todos, setTodos] = useState([]);
 	const [error, setError] = useState('');
 	const [newTodo, setNewTodo] = useState('');
+	const [isTodoEditing, setIsTodoEditing] = useState(false);
 
 	useEffect(() => {
 		async function fetchTodos() {
@@ -105,11 +111,12 @@ export default function App() {
 					</form>
 					<ul>
 						{todos.map((element, index) => (
-							<ListItem
+							<TodoListItem
 								key={index}
 								element={element}
 								setError={setError}
 								todosState={[todos, setTodos]}
+								isTodoEditingState={[isTodoEditing, setIsTodoEditing]}
 							/>
 						))}
 					</ul>
@@ -119,8 +126,19 @@ export default function App() {
 	);
 }
 
-function ListItem({ element, setError, todosState }) {
+function TodoListItem({ element, setError, todosState, isTodoEditingState }) {
 	const [todos, setTodos] = todosState;
+	const [isTodoEditing, setIsTodoEditing] = isTodoEditingState;
+	const [editable, setEditable] = useState(false);
+	const [todoValue, setTodoValue] = useState(element.todo);
+	const todoInput = useRef(null);
+
+	useEffect(() => {
+		if (isTodoEditing) {
+			todoInput.current.focus();
+		}
+	}, [isTodoEditing]);
+
 	function getDateTimeFromTimeStamp(timestamp) {
 		const date = new Date(timestamp * 1000);
 
@@ -167,13 +185,40 @@ function ListItem({ element, setError, todosState }) {
 			setError('Something went wrong deleting review');
 		}
 	}
+	async function editTodoHandler(todoId, newValue) {
+		console.log('Edit this id: ' + todoId + ' with this new value ' + newValue);
+	}
 
 	return (
-		<li className="my-2 flex w-96 items-center justify-between break-words rounded-sm bg-slate-200 p-5 text-left">
-			<p className="w-1/2">{element.todo}</p>
+		<li className="my-2 flex w-96 items-center justify-around break-words rounded-sm bg-slate-200 p-5 text-left">
+			<input
+				className="w-1/3 bg-gray-200 focus:outline-none"
+				value={todoValue}
+				onChange={(e) => setTodoValue(e.target.value)}
+				disabled={!editable}
+				ref={todoInput}
+			/>
 			<p className=" text-gray-400">
 				{getDateTimeFromTimeStamp(element.timestamp)}
 			</p>
+			<button
+				className={`text-xl transition-all ${
+					editable ? 'text-green-400' : 'text-gray-400'
+				}`}
+				onClick={() => {
+					if (editable) {
+						editTodoHandler(element.id, todoValue);
+						setEditable(false);
+						setIsTodoEditing(false);
+						return;
+					}
+					if (isTodoEditing) return;
+					setIsTodoEditing(true);
+					setEditable(!editable);
+				}}
+			>
+				{!editable ? <HiOutlinePencil /> : <HiCheck />}
+			</button>
 			<button
 				className="text-xl text-red-600"
 				onClick={() => {
