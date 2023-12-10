@@ -17,19 +17,23 @@ type todo struct {
 }
 var todos []todo = []todo{}
 
-func todosEndpoint(w http.ResponseWriter, req *http.Request) {
-	if(req.Method != "GET") {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
+func responseTodos(w http.ResponseWriter) {
 	jsonData, err := json.Marshal(todos)
 	if err != nil {
 		http.Error(w, "Error encoding JSON", http.StatusInternalServerError)
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jsonData)
+}
+
+func todosEndpoint(w http.ResponseWriter, req *http.Request) {
+	if(req.Method != "GET") {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	responseTodos(w)
 }
 
 func addTodoEndpoint(w http.ResponseWriter, req *http.Request) {
@@ -40,7 +44,8 @@ func addTodoEndpoint(w http.ResponseWriter, req *http.Request) {
 
 	var body, err = io.ReadAll(req.Body)
 	if err != nil {
-		panic(err)
+		http.Error(w, "reviewId not found", http.StatusBadRequest)
+		return
 	}
 	var newTodo todo
 
@@ -50,13 +55,7 @@ func addTodoEndpoint(w http.ResponseWriter, req *http.Request) {
 
 	todos = append(todos, newTodo)
 	
-	jsonData, err := json.Marshal(todos)
-	if err != nil {
-		http.Error(w, "Error encoding JSON", http.StatusInternalServerError)
-		return
-	}
-
-	w.Write(jsonData)
+	responseTodos(w)
 }
 
 func deleteTodoEndpoint(w http.ResponseWriter, req *http.Request) {
@@ -67,7 +66,8 @@ func deleteTodoEndpoint(w http.ResponseWriter, req *http.Request) {
 
 	var reviewId, err = io.ReadAll(req.Body)
 	if err != nil {
-		panic(err)
+		http.Error(w, "reviewId not found", http.StatusBadRequest)
+		return
 	}
 	var deleteItemindex int
 	for i := 0; i < len(todos); i++ {
@@ -80,14 +80,8 @@ func deleteTodoEndpoint(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "invalid delete index", http.StatusBadRequest)
     }
 	todos = append(todos[:deleteItemindex], todos[deleteItemindex+1:]...)
-	
-	jsonData, err := json.Marshal(todos)
-	if err != nil {
-		http.Error(w, "Error encoding JSON", http.StatusInternalServerError)
-		return
-	}
 
-	w.Write(jsonData)
+	responseTodos(w)
 }
 
 func main() {
