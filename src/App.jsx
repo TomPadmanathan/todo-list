@@ -100,7 +100,7 @@ export default function App() {
 						<input
 							type="text"
 							placeholder="New Todo"
-							className="flex items-center justify-between rounded-sm bg-slate-200 focus:outline-none"
+							className="mr-2 w-full items-center justify-between rounded-sm bg-slate-200 outline focus:outline-none"
 							onChange={(e) => setNewTodo(e.target.value)}
 							value={newTodo}
 							required
