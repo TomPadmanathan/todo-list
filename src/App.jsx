@@ -115,7 +115,7 @@ export default function App() {
 					<ul>
 						{todos.map((element, index) => (
 							<TodoListItem
-								key={index}
+								key={element.id}
 								element={element}
 								setError={setError}
 								todosState={[todos, setTodos]}
@@ -128,7 +128,6 @@ export default function App() {
 		</>
 	);
 }
-
 function TodoListItem({ element, setError, todosState, isTodoEditingState }) {
 	const [todos, setTodos] = todosState;
 	const [isTodoEditing, setIsTodoEditing] = isTodoEditingState;
@@ -188,6 +187,7 @@ function TodoListItem({ element, setError, todosState, isTodoEditingState }) {
 			setError('Something went wrong deleting review');
 		}
 	}
+
 	async function editTodoHandler(todoId, newValue) {
 		console.log('Edit this id: ' + todoId + ' with this new value ' + newValue);
 	}
@@ -197,13 +197,15 @@ function TodoListItem({ element, setError, todosState, isTodoEditingState }) {
 			<input
 				className="w-1/3 bg-gray-200 focus:outline-none"
 				value={todoValue}
-				onChange={(e) => setTodoValue(e.target.value)}
-				disabled={!editable}
 				ref={todoInput}
+				disabled={!editable}
+				onChange={(e) => setTodoValue(e.target.value)}
 			/>
-			<p className=" text-gray-400">
+
+			<p className="text-gray-400">
 				{getDateTimeFromTimeStamp(element.timestamp)}
 			</p>
+
 			<button
 				className={`text-xl transition-all ${
 					!isTodoEditing && 'hover:text-green-400'
@@ -222,6 +224,7 @@ function TodoListItem({ element, setError, todosState, isTodoEditingState }) {
 			>
 				{!editable ? <HiOutlinePencil /> : <HiCheck />}
 			</button>
+
 			<button
 				className="text-xl text-red-600"
 				onClick={() => {
