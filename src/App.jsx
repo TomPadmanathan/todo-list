@@ -18,6 +18,25 @@ export default function App() {
 	const [newTodo, setNewTodo] = useState('');
 	const [isTodoEditing, setIsTodoEditing] = useState(false);
 
+	function checkResponseError(response) {
+		if (!response.ok) {
+			switch (response.status) {
+				case 500:
+					setError('Internal server error');
+					break;
+				case 405:
+					setError('Method not allowed');
+					break;
+				case 404:
+					setError('Resource not found');
+					break;
+				default:
+					setError('Something went wrong adding new todo');
+					break;
+			}
+		}
+	}
+
 	useEffect(() => {
 		async function fetchTodos() {
 			try {
@@ -25,22 +44,7 @@ export default function App() {
 					method: 'GET',
 					headers: { 'Content-Type': 'application/json' },
 				});
-				if (!response.ok) {
-					switch (response.status) {
-						case 500:
-							setError('Internal server error');
-							break;
-						case 405:
-							setError('Method not allowed');
-							break;
-						case 404:
-							setError('Resource not found');
-							break;
-						default:
-							setError('Something went wrong adding new todo');
-							break;
-					}
-				}
+				checkResponseError(response);
 				const responseJson = await response.json();
 				setTodos(responseJson);
 			} catch (error) {
@@ -61,22 +65,8 @@ export default function App() {
 			});
 			const responseJson = await response.json();
 
-			if (!response.ok) {
-				switch (response.status) {
-					case 500:
-						setError('Internal server error');
-						return;
-					case 405:
-						setError('Method not allowed');
-						return;
-					case 404:
-						setError('Resource not found');
-						return;
-					default:
-						setError('Something went wrong adding new todo');
-						return;
-				}
-			}
+			checkResponseError(response);
+
 			setNewTodo('');
 			setTodos(responseJson);
 		} catch {
@@ -135,9 +125,7 @@ function TodoListItem({ element, setError, setTodos, isTodoEditingState }) {
 	const todoInput = useRef(null);
 
 	useEffect(() => {
-		if (isTodoEditing) {
-			todoInput.current.focus();
-		}
+		if (isTodoEditing) todoInput.current.focus();
 	}, [isTodoEditing]);
 
 	function getDateTimeFromTimeStamp(timestamp) {
@@ -165,22 +153,8 @@ function TodoListItem({ element, setError, setTodos, isTodoEditingState }) {
 			});
 			const responseJson = await response.json();
 
-			if (!response.ok) {
-				switch (response.status) {
-					case 500:
-						setError('Internal server error');
-						return;
-					case 405:
-						setError('Method not allowed');
-						return;
-					case 404:
-						setError('Resource not found');
-						return;
-					default:
-						setError('Something went wrong deleting todo');
-						return;
-				}
-			}
+			checkResponseError(response);
+
 			setTodos(responseJson);
 		} catch {
 			setError('Something went wrong deleting todo');
@@ -188,8 +162,6 @@ function TodoListItem({ element, setError, setTodos, isTodoEditingState }) {
 	}
 
 	async function editTodoHandler(todoId, newValue) {
-		console.log('Edit this id: ' + todoId + ' with this new value ' + newValue);
-
 		try {
 			const response = await fetch('http://localhost:3001/editTodo', {
 				method: 'POST',
@@ -198,22 +170,7 @@ function TodoListItem({ element, setError, setTodos, isTodoEditingState }) {
 			});
 			const responseJson = await response.json();
 
-			if (!response.ok) {
-				switch (response.status) {
-					case 500:
-						setError('Internal server error');
-						return;
-					case 405:
-						setError('Method not allowed');
-						return;
-					case 404:
-						setError('Resource not found');
-						return;
-					default:
-						setError('Something went wrong editing todo');
-						return;
-				}
-			}
+			checkResponseError(response);
 			setTodos(responseJson);
 		} catch {
 			setError('Something went wrong editing todo');
@@ -268,9 +225,7 @@ function TodoListItem({ element, setError, setTodos, isTodoEditingState }) {
 			</button>
 			<button
 				className="text-xl text-red-600"
-				onClick={() => {
-					deleteTodoHandler(element.id);
-				}}
+				onClick={() => deleteTodoHandler(element.id)}
 			>
 				<HiOutlineTrash />
 			</button>
