@@ -12,22 +12,34 @@ import {
 	HiCheck,
 } from 'react-icons/hi';
 
-function checkResponseError(response, setError) {
-	if (!response.ok) {
-		switch (response.status) {
-			case 500:
-				setError('Internal server error');
-				break;
-			case 405:
-				setError('Method not allowed');
-				break;
-			case 404:
-				setError('Resource not found');
-				break;
-			default:
-				setError('Something went wrong adding new todo');
-				break;
+async function fetchHandler(route, method, setError, setTodos, body) {
+	const defaultError = 'Something went wrong fetching';
+	try {
+		const response = await fetch('http://localhost:3001/' + route, {
+			method,
+			headers: { 'Content-Type': 'application/json' },
+			body,
+		});
+		if (!response.ok) {
+			switch (response.status) {
+				case 500:
+					setError('Internal server error');
+					break;
+				case 405:
+					setError('Method not allowed');
+					break;
+				case 404:
+					setError('Resource not found');
+					break;
+				default:
+					setError('Something went wrong fetching');
+					break;
+			}
 		}
+		const responseJson = await response.json();
+		setTodos(responseJson);
+	} catch {
+		setError(defaultError);
 	}
 }
 
@@ -38,38 +50,8 @@ export default function App() {
 	const [isTodoEditing, setIsTodoEditing] = useState(false);
 
 	useEffect(() => {
-		async function fetchTodos() {
-			try {
-				const response = await fetch('http://localhost:3001/todos', {
-					method: 'GET',
-					headers: { 'Content-Type': 'application/json' },
-				});
-				checkResponseError(response, setError);
-				const responseJson = await response.json();
-				setTodos(responseJson);
-			} catch (error) {
-				setError('Something went wrong fetching todos');
-			}
-		}
-		fetchTodos();
+		fetchHandler('todos', 'GET', setError, setTodos);
 	}, []);
-
-	async function addTodoHandler(e) {
-		e.preventDefault();
-		try {
-			const response = await fetch('http://localhost:3001/addTodo', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: newTodo,
-			});
-			checkResponseError(response, setError);
-			const responseJson = await response.json();
-			setNewTodo('');
-			setTodos(responseJson);
-		} catch {
-			setError('Something went wrong adding new todo');
-		}
-	}
 
 	return (
 		<>
@@ -80,7 +62,11 @@ export default function App() {
 				<div>
 					{error && <p className="text-red-600">{error}</p>}
 					<form
-						onSubmit={addTodoHandler}
+						onSubmit={(e) => {
+							e.preventDefault();
+							fetchHandler('addTodo', 'POST', setError, setTodos, newTodo);
+							setNewTodo('');
+						}}
 						className="my-2 flex w-[500px] items-center justify-between rounded-sm bg-slate-200 p-5 focus:outline-none"
 					>
 						<input
@@ -137,36 +123,6 @@ function TodoListItem({ element, setError, setTodos, isTodoEditingState }) {
 			.padStart(2, '0')}/${date.getFullYear()}`;
 	}
 
-	async function deleteTodoHandler(todoId) {
-		try {
-			const response = await fetch('http://localhost:3001/deleteTodo', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: todoId,
-			});
-			checkResponseError(response, setError);
-			const responseJson = await response.json();
-			setTodos(responseJson);
-		} catch {
-			setError('Something went wrong deleting todo');
-		}
-	}
-
-	async function editTodoHandler(todoId, newValue) {
-		try {
-			const response = await fetch('http://localhost:3001/editTodo', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ todoId, newValue }),
-			});
-			checkResponseError(response, setError);
-			const responseJson = await response.json();
-			setTodos(responseJson);
-		} catch {
-			setError('Something went wrong editing todo');
-		}
-	}
-
 	useEffect(() => {
 		if (todoInput.current) {
 			const element = todoInput.current;
@@ -199,7 +155,14 @@ function TodoListItem({ element, setError, setTodos, isTodoEditingState }) {
 				} ${editable ? 'text-green-400' : 'text-gray-400'}`}
 				onClick={() => {
 					if (editable) {
-						editTodoHandler(element.id, todoValue);
+						fetchHandler(
+							'editTodo',
+							'POST',
+							setError,
+							setTodos,
+							JSON.stringify({ todoId: element.id, newValue: todoValue })
+						);
+
 						setEditable(false);
 						setIsTodoEditing(false);
 						return;
@@ -213,7 +176,9 @@ function TodoListItem({ element, setError, setTodos, isTodoEditingState }) {
 			</button>
 			<button
 				className="text-xl text-red-600"
-				onClick={() => deleteTodoHandler(element.id)}
+				onClick={() =>
+					fetchHandler('deleteTodo', 'POST', setError, setTodos, element.id)
+				}
 			>
 				<HiOutlineTrash />
 			</button>
