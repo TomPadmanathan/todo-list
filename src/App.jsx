@@ -12,30 +12,30 @@ import {
 	HiCheck,
 } from 'react-icons/hi';
 
+function checkResponseError(response, setError) {
+	if (!response.ok) {
+		switch (response.status) {
+			case 500:
+				setError('Internal server error');
+				break;
+			case 405:
+				setError('Method not allowed');
+				break;
+			case 404:
+				setError('Resource not found');
+				break;
+			default:
+				setError('Something went wrong adding new todo');
+				break;
+		}
+	}
+}
+
 export default function App() {
 	const [todos, setTodos] = useState([]);
 	const [error, setError] = useState('');
 	const [newTodo, setNewTodo] = useState('');
 	const [isTodoEditing, setIsTodoEditing] = useState(false);
-
-	function checkResponseError(response) {
-		if (!response.ok) {
-			switch (response.status) {
-				case 500:
-					setError('Internal server error');
-					break;
-				case 405:
-					setError('Method not allowed');
-					break;
-				case 404:
-					setError('Resource not found');
-					break;
-				default:
-					setError('Something went wrong adding new todo');
-					break;
-			}
-		}
-	}
 
 	useEffect(() => {
 		async function fetchTodos() {
@@ -44,7 +44,7 @@ export default function App() {
 					method: 'GET',
 					headers: { 'Content-Type': 'application/json' },
 				});
-				checkResponseError(response);
+				checkResponseError(response, setError);
 				const responseJson = await response.json();
 				setTodos(responseJson);
 			} catch (error) {
@@ -56,17 +56,14 @@ export default function App() {
 
 	async function addTodoHandler(e) {
 		e.preventDefault();
-
 		try {
 			const response = await fetch('http://localhost:3001/addTodo', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: newTodo,
 			});
+			checkResponseError(response, setError);
 			const responseJson = await response.json();
-
-			checkResponseError(response);
-
 			setNewTodo('');
 			setTodos(responseJson);
 		} catch {
@@ -79,7 +76,6 @@ export default function App() {
 			<div className="flex h-60 items-center justify-center">
 				<h2 className="text-4xl">Todo List</h2>
 			</div>
-
 			<div className="grid place-items-center">
 				<div>
 					{error && <p className="text-red-600">{error}</p>}
@@ -130,18 +126,15 @@ function TodoListItem({ element, setError, setTodos, isTodoEditingState }) {
 
 	function getDateTimeFromTimeStamp(timestamp) {
 		const date = new Date(timestamp * 1000);
-
-		const dateStr = `${date.getHours().toString().padStart(2, '0')}:${date
+		return `${date.getHours().toString().padStart(2, '0')}:${date
 			.getMinutes()
 			.toString()
-			.padStart(2, '0')}`;
-		const timeStr = `${date.getDate().toString().padStart(2, '0')}/${(
-			date.getMonth() + 1
-		)
+			.padStart(2, '0')} ${' • '} ${date
+			.getDate()
+			.toString()
+			.padStart(2, '0')}/${(date.getMonth() + 1)
 			.toString()
 			.padStart(2, '0')}/${date.getFullYear()}`;
-
-		return dateStr + ' • ' + timeStr;
 	}
 
 	async function deleteTodoHandler(todoId) {
@@ -151,10 +144,8 @@ function TodoListItem({ element, setError, setTodos, isTodoEditingState }) {
 				headers: { 'Content-Type': 'application/json' },
 				body: todoId,
 			});
+			checkResponseError(response, setError);
 			const responseJson = await response.json();
-
-			checkResponseError(response);
-
 			setTodos(responseJson);
 		} catch {
 			setError('Something went wrong deleting todo');
@@ -168,9 +159,8 @@ function TodoListItem({ element, setError, setTodos, isTodoEditingState }) {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ todoId, newValue }),
 			});
+			checkResponseError(response, setError);
 			const responseJson = await response.json();
-
-			checkResponseError(response);
 			setTodos(responseJson);
 		} catch {
 			setError('Something went wrong editing todo');
@@ -200,11 +190,9 @@ function TodoListItem({ element, setError, setTodos, isTodoEditingState }) {
 					e.target.style.height = `${e.target.scrollHeight}px`;
 				}}
 			/>
-
 			<p className="text-gray-400">
 				{getDateTimeFromTimeStamp(element.timestamp)}
 			</p>
-
 			<button
 				className={`text-xl transition-all ${
 					!isTodoEditing && 'hover:text-green-400'
