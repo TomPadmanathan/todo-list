@@ -32,7 +32,7 @@ async function fetchHandler(route, method, setError, setTodos, body) {
 					setError('Resource not found');
 					break;
 				default:
-					setError('Something went wrong fetching');
+					setError(defaultError);
 					break;
 			}
 		}
